@@ -1,2 +1,4 @@
-# DatabaseManipulation
-Repository with solutions to the challenges from the ME315 (Database Manipulation) course. It contains code examples and results in HTML/PDF format, clearly documenting each exercise.
+# Database Manipulation - ME315
+
+Repositório com as soluções dos laboratórios da disciplina ME315 (Manipulação de Bancos de Dados) da UNICAMP. Contém exemplos de código, resultados em formato HTML/PDF e documentação detalhada de cada exercício.
+
