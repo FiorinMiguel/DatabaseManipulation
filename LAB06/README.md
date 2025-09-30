@@ -13,3 +13,16 @@
 - Agrupamentos
 - Junções de tabelas
 - Filtros e Ordenação
+
+## Como Executar
+
+### Pré-requisitos
+- R e RStudio instalados
+- Pacotes: `RSQLite`, `Quarto`
+
+### Instruções
+1. Clone este repositório
+2. Abra o arquivo `Lab06.qmd` no RStudio
+3. Certifique-se que o arquivo `disco.db` está no mesmo diretório
+4. Execute os chunks de código individualmente ou clique em "Render" para compilar o documento completo
+5. Para visualização rápida dos resultados, abra o arquivo `Resultados.html` em qualquer navegador web
