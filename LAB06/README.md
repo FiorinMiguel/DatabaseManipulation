@@ -3,6 +3,14 @@
 - Exercícios básicos de SQL utilizando SQLite no R/Quarto.
 - Comandos: SELECT, JOIN, COUNT, GROUP BY, etc.
 
+## Estrutura de Arquivos
+LAB06/
+- README.md (Documentação do laboratório)
+- Lab06.qmd (Código fonte completo - Quarto)
+- Resultados.html (Relatório em HTML)
+- Resultados.pdf (Relatório em PDF)
+- disco.db (Banco de dados SQLite)
+
 ## Banco de Dados:
 - **disco.db**: Banco de Dados de uma loja de músicas
 - Tabelas: albums, artists, customers, employees, genres, invoice_items, invoices, etc.
