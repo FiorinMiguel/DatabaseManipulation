@@ -1,0 +1,179 @@
+---
+title: "Desafio10"
+format: html
+editor: visual
+author: Miguel Fiorin
+---
+
+```{r}
+library(reticulate)
+py_config()
+py_install("pyarrow", pip = TRUE)
+py_install(c("polars", "fastexcel"), pip = TRUE)
+
+```
+
+```{python}
+import polars as pl
+
+aeroportos = pl.read_csv("airports.csv",
+                         columns = ["IATA_CODE", "CITY", "STATE"])
+aeroportos.head(2)
+```
+
+```{python}
+wdi = pl.read_excel("WDIEXCEL.xlsx", sheet_name = "Country",
+                    columns = ["Short Name", "Region"])
+wdi.head(2)
+```
+
+```{python}
+df = pl.DataFrame({
+    "grupo": ["A", "A", "B", "B", "C"],
+    "valor1": [10, 15, 10, None, 25],
+    "valor2": [5, None, 20, 30, None]
+})
+df
+```
+
+```{python}
+df["valor1"]
+df["valor1"].mean()
+df["valor1"].drop_nulls()
+df["valor1"].drop_nulls().mean()
+```
+
+```{python}
+df.select([
+  pl.col("valor1").mean().alias("media_v1"),
+  pl.col("valor2").mean()
+])
+
+df.group_by("grupo").agg([
+  pl.col("valor1").mean().alias("media_valor1"),
+  pl.col("valor2").min().alias("min_valor2")
+]).sort("grupo")
+
+voos = pl.read_csv("flights.csv",
+                   columns = ["AIRLINE", "ARRIVAL_DELAY", "DESTINATION_AIRPORT"],
+                   dtypes = {"AIRLINE": pl.Utf8,
+                             "ARRIVAL_DELAY": pl.Int32,
+                             "DESTINATION_AIRPORT": pl.Utf8})
+voos.shape
+
+voos.head(3)
+```
+
+```{python}
+resultado = (
+  voos.drop_nulls(["AIRLINE", "DESTINATION_AIRPORT", "ARRIVAL_DELAY"])
+  .filter(
+    pl.col("AIRLINE").is_in(["AA", "DL"]) &
+    pl.col("DESTINATION_AIRPORT").is_in(["SEA", "MIA", "BWI"])
+    )
+    .group_by(["AIRLINE", "DESTINATION_AIRPORT"])
+    .agg([
+      (pl.col("ARRIVAL_DELAY") > 30).mean().alias("atraso_medio")
+      ])
+)
+
+resultado.sort("atraso_medio")
+```
+
+```{python}
+# Criando DataFrames
+clientes = pl.DataFrame({
+    "cliente_id": [1, 2, 3, 4],
+    "nome": ["Ana", "Bruno", "Clara", "Daniel"]
+})
+
+print(clientes)
+
+pedidos = pl.DataFrame({
+    "pedido_id": [101, 102, 103, 104, 105],
+    "cliente_id": [1, 2, 3, 1, 5],
+    "valor": [100.50, 250.75, 75.00, 130.00, 79.00]
+})
+
+print(pedidos)
+```
+
+```{python}
+res_ij = clientes.join(pedidos, on="cliente_id", how="inner")
+print(res_ij)
+```
+
+```{python}
+res_lj = clientes.join(pedidos, on="cliente_id", how="left")
+print(res_lj)
+```
+
+```{python}
+res_rj = clientes.join(pedidos, on="cliente_id", how="right")
+print(res_rj)
+```
+
+```{python}
+res_oj = clientes.join(pedidos, on="cliente_id", how="outer")
+print(res_oj)
+```
+
+```{python}
+res_cj = clientes.join(pedidos, how="cross")
+print(res_cj)
+```
+
+### P1: Qual é o valor médio das compras realizadas para cada cliente identificado?
+
+```{python}
+print(clientes)
+print(pedidos)
+
+res = res_ij.group_by(["nome", "cliente_id"]).agg(pl.col("valor").mean())
+print(res)
+```
+
+### P2: Informe os nomes e a quantidade de compras com valor mínimo de \$100.00 realizadas por cada cliente.
+
+```{python}
+print(clientes)
+print(pedidos)
+
+res = (res_oj.with_columns(pl.col("valor") > 100)
+       .group_by("nome")
+       .agg(pl.col("valor").sum()))
+print(res)
+```
+
+```{python}
+vendas = pl.DataFrame({
+    "id_venda": [1, 2, 3],
+    "id_cl": [1, 2, 1],
+    "id_prod": [101, 102, 103],
+    "qtde": [2, 1, 1]
+})
+
+detalhes_pedidos = pl.DataFrame({
+    "id_ped": [201, 202, 203],
+    "cl_id": [1, 2, 1],
+    "id_prod": [101, 102, 104],
+    "valor": [50.00, 75.00, 100.00]
+})
+```
+
+```{python}
+print(vendas)
+print(detalhes_pedidos)
+
+final = vendas.join(detalhes_pedidos,
+                    left_on = ["id_cl", "id_prod"],
+                    right_on = ["cl_id", "id_prod"],
+                    how = "inner")
+print(final)
+```
+
+```{r}
+agora <- Sys.time()
+cat("arquivo compilado em:", format(agora, "%Y-%m-%d %H:%M:%S"))
+
+```
