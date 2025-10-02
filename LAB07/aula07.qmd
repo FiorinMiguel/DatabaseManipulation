@@ -1,0 +1,91 @@
+---
+title: "Aula7"
+format: html
+editor: visual
+---
+
+```{r}
+library(RSQLite)
+library(tidyverse)
+
+if(!"discoCopy.db" %in% list.files("ME315")){
+file.copy("disco.db" , "discoCopy.db")
+} # Modificaremos esse arquivo
+```
+
+```{r}
+conn <- dbConnect(SQLite(), "discoCopy.db")
+dbListTables(conn)
+dbListFields(conn, "albums")
+```
+
+#### A sintaxe para criar uma tabela vazia, no SQLite, é através do comando
+CREATE TABLE nome (col1 tipo, col2 tipo2, ...)
+
+```{r}
+create_instruments <- paste(
+  "CREATE TABLE instruments
+  (AlbumId INTEGER,
+  TrackId INTEGER,
+  ElectricGuitar INTEGER,
+  Singer INTEGER,
+  Trumpet INTEGER)"
+)
+dbExecute(conn, create_instruments)
+
+dbListTables(conn)
+dbListFields(conn ,"instruments")
+```
+
+#### Você pode remover uma tabela usando o comando DROP TABLE nome:
+
+```{r}
+dbExecute(conn, "DROP TABLE instruments")
+dbListTables(conn)
+```
+
+```{r}
+aname = "Gilberto Gil"
+sql = paste0("SELECT ArtistId FROM artists "
+,
+"WHERE Name = '"
+, aname,
+"'")
+aId = dbGetQuery(conn, sql)
+sql = paste('SELECT Title FROM albums'
+,
+'WHERE ArtistId ='
+, aId)
+dbGetQuery(conn, sql)
+
+```
+
+```{r}
+dbExecute(conn, "CREATE TABLE instruments 
+(AlbumId INTEGER,
+TrackId INTEGER,
+ElectricGuitar INTEGER,
+Singer INTEGER,
+Trumpet INTEGER)")
+dbListTables(conn)
+```
+
+```{r}
+dbExecute(conn,
+"INSERT INTO instruments
+VALUES ('85','1075', 0, 1, 0),
+('85','1078', 0, 1, 0)")
+```
+
+```{r}
+dbGetQuery(conn, "SELECT * FROM instruments")
+```
+
+```{r}
+dbWriteTable(conn, "mtcars", mtcars)
+dbExecute(conn, "DROP TABLE mtcars")
+dbWriteTable(conn, 'mtcars', mtcars, row.names = 'Marca')
+
+dbGetQuery(conn, "SELECT * FROM mtcars") %>% head
+
+```
