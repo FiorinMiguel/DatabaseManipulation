@@ -1,0 +1,141 @@
+---
+title: Atividade - Introdução ao Polars
+jupyter: python3
+---
+
+
+
+```{python}
+from datetime import datetime
+agora = datetime.now()
+print("Arquivo compilado em:", agora.strftime("%d%m%Y %H:%M:%S"))
+```
+
+```{python}
+import os
+import polars as pl
+import matplotlib.pyplot as plt
+```
+
+## Utilizando o arquivo renda_adulta.csv e sabendo que ele não possui cabeçalho, faça a importação do banco de dados utilizando os nomes das colunas conforme apresentado acima e na sequência ali indicada. No momento da importação do arquivo, você deve, também, indicar os tipos de cada uma das colunas. Utilize o fato de que o símbolo ? representa valores faltantes.
+
+```{python}
+cols = [
+    "age", "workclass", "fnlwgt", "education", "education-num", "marital-status", "occupation", "relationship", 
+    "race", "sex","capital-gain", "capital-loss", "hours-per-week", "native-country", "income"
+]
+```
+
+```{python}
+tipos = {
+    "age": pl.Int64,
+    "workclass": pl.Utf8,
+    "fnlwgt": pl.Int64,
+    "education": pl.Utf8,
+    "education-num": pl.Int64,
+    "marital-status": pl.Utf8,
+    "occupation": pl.Utf8,
+    "relationship":pl.Utf8,
+    "race": pl.Utf8,
+    "sex": pl.Utf8,
+    "capital-gain": pl.Int64,
+    "capital-loss": pl.Int64,
+    "hours-per-week": pl.Int64,
+    "native-country": pl.Utf8,
+    "income": pl.Utf8
+}
+```
+
+```{python}
+renda_dataset = pl.read_csv(
+    "renda_adulta.csv",
+    has_header= False,
+    new_columns= cols,
+    schema=tipos,
+    null_values="?"
+)
+```
+
+```{python}
+renda_dataset.head()
+```
+
+## Apresente os tipos de cada uma das coluna.
+
+```{python}
+renda_dataset.schema
+```
+
+## Apresente as dimensões da tabela de dados.
+
+```{python}
+renda_dataset.shape
+```
+
+## Quantas pessoas recebem acima de $50.000 e quantas pessoas recebem abaixo deste limiar?
+
+```{python}
+renda_dataset.select([
+    pl.col("income").value_counts()
+])
+```
+
+Portanto, há 24720 pessoas que recebem mais de 50.000, e 7841 que recebem menos de 50.000
+
+## Crie um objeto chamado renda_longo, no qual você transforma as colunas capital-gain e capital-loss (formato wide) para formato longo. Os valores destas variáveis devem ser armazenados numa nova coluna chamada Valor e os tipos de valores (gain e loss) devem ser armazenados numa coluna chamada tipo.
+
+
+```{python}
+renda_longo = renda_dataset.select([
+    "capital-gain", "capital-loss"
+]).unpivot(
+    variable_name= "tipo",
+    value_name= "Valor"
+).with_columns([
+    pl.col("tipo").str.replace("capital-gain", "gain").str.replace("capital-loss", "loss")
+])
+```
+
+```{python}
+print(renda_longo)
+```
+
+## Quais são as médias de horas trabalhadas por classe salarial?
+
+
+```{python}
+media_horas_por_renda = renda_dataset.group_by("income").agg(
+    pl.col("hours-per-week").mean().alias("media_horas")
+).sort("income")
+print(media_horas_por_renda)
+```
+
+## Se cada linha representa uma pessoa, quantas pessoas foram amostradas em cada profissão?
+
+
+```{python}
+contagem_por_profissao = renda_dataset.group_by("occupation").agg(
+    pl.len().alias("quantidade")
+).sort("quantidade")
+
+print(contagem_por_profissao)
+```
+
+## Crie um gráfico de barras que apresente o número médio de horas trabalhadas semanalmente em função do nível salarial.
+
+
+```{python}
+rendas = media_horas_por_renda["income"].to_list()
+horas = media_horas_por_renda["media_horas"].to_list()
+
+
+plt.figure(figsize= (8,5))
+plt.bar(rendas, horas, color= ['skyblue', 'orange'])
+plt.title("Média de horas trabalhadas semanalmente por nível salarial")
+plt.xlabel("Nível Salarial")
+plt.ylabel("Média de horas por semana")
+plt.grid(axis= 'y', linestyle= '--', alpha= 0.7)
+plt.show()
+```
+
+
