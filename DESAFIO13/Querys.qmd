@@ -1,0 +1,192 @@
+---
+title: IMDB Querys - LAB 13 (ME315)
+jupyter: python3
+---
+
+```{python}
+import sqlite3
+import pandas as pd
+conn = sqlite3.connect("IMDB.db")
+cursor = conn.cursor()
+```
+```{python}
+from datetime import datetime
+
+# hora e data atual
+now = datetime.now()
+print("Compilado em:", now.strftime("%d/%m/%Y %H:%M:%S"))
+```
+
+## Analisando estrutura das tabelas presentes no banco de dados
+
+
+**Tabela basics**:
+
+```{python}
+#| scrolled: true
+head_basics = pd.read_sql_query("SELECT * FROM basics LIMIT 6;", conn)
+print(head_basics)
+```
+
+**Tabela principals**:
+
+```{python}
+head_principals = pd.read_sql_query("SELECT * FROM principals LIMIT 6;", conn)
+print(head_principals)
+```
+
+**Tabela ratings**:
+
+```{python}
+head_ratings = pd.read_sql_query("SELECT * FROM ratings LIMIT 6;", conn)
+print(head_ratings)
+```
+
+# Quais são os 5 filmes com as maiores notas (averageRating)?
+
+```{python}
+query = """
+SELECT DISTINCT titletype
+FROM basics
+"""
+teste = pd.read_sql_query(query,conn)
+print(teste)
+```
+
+```{python}
+query = """
+SELECT b.primaryTitle, r.averageRating, r.numVotes
+FROM ratings r
+JOIN basics b ON r.tconst = b.tconst
+WHERE b.titletype = 'movie'
+ORDER BY r.averageRating DESC, r.numVotes DESC
+LIMIT 5;
+"""
+filmes_melhores_avaliados = pd.read_sql_query(query, conn)
+print(filmes_melhores_avaliados)
+```
+
+Os 5 filmes melhor avaliados estão com nota 10. Sendo esses:
+
+- **Kaveri**
+- **Kurukku**
+- **Jedal Dar Omghe 30 Metri**
+- **Sargashte**
+- **Gorgeous Rascal**
+
+Porém, é perceptível que todos têm numero de avaliações baixas (tendo em vista que o IMDB é uma plataforma internacional). Logo, para uma seleção mais confiável, será utilizado um critério para evitar esse cenário.
+
+```{python}
+query = """
+SELECT b.primaryTitle, r.averageRating, r.numVotes
+FROM ratings r
+JOIN basics b ON r.tconst = b.tconst
+WHERE b.titletype = 'movie'
+AND r.numVotes > 100000
+ORDER BY r.averageRating DESC, r.numVotes DESC
+LIMIT 5;
+"""
+filmes_melhores_avaliados_com_criterio = pd.read_sql_query(query, conn)
+print(filmes_melhores_avaliados_com_criterio)
+```
+
+Após o uso de 'numVotes' > 100.000 , os filmes melhores avaliados são:
+1. **The Shawshank Redemption** (Nota: 9.3)
+2. **The Godfather** (Nota: 9.2)
+3. **The Dark Knight** (Nota: 9.0)
+4. **The Lord of the Rings: The Return of the King** (Nota: 9.0)
+5. **Schindlers List** (Nota: 9.0)
+
+# Qual é o gênero mais frequente entre os filmes com nota maior que 8?
+
+### Analisando os gêneros presentes na tabela
+
+```{python}
+#| scrolled: true
+query = """
+SELECT DISTINCT genres
+FROM basics;
+"""
+generos_basics = pd.read_sql_query(query, conn)
+print(generos_basics)
+```
+
+Buscando gênero mais frequente em notas maiores que 8:
+
+```{python}
+high_rating = pd.read_sql_query("""
+SELECT genres 
+FROM basics b
+JOIN ratings r ON b.tconst = r.tconst
+WHERE r.averageRating > 8
+AND b.titleType = 'movie'
+""", conn)
+
+from collections import Counter
+
+all_genres = Counter()
+for g in high_rating['genres'].dropna():
+    for genre in g.split(','):
+        all_genres[genre] += 1
+
+print(all_genres.most_common(2))
+```
+
+Logo, o gênero com maior contagem de notas atribuídas maiores que 8 é **Documentary**. Este fenômeno ocorre porque documentários, com menos avaliações e públicos mais nichados, mantêm notas altas mais facilmente. Enquanto filmes de outros gêneros recebem volume massivo de votos com maior variação, documentários beneficiam-se de engajamento mais favorável entre seu público específico.
+
+# Quais são os 3 atores/atrizes que mais participaram de filmes com nota maior que 7.5?
+
+**Contagem de atores**
+
+```{python}
+query = """
+SELECT COUNT(DISTINCT nconst)
+FROM principals
+WHERE characters IS NOT NULL;
+"""
+atores = pd.read_sql_query(query, conn)
+print(atores)
+```
+
+**Id dos Filmes com averageRating > 7.5**
+
+```{python}
+query = """
+SELECT r.tconst
+FROM ratings r
+JOIN basics b ON r.tconst = b.tconst
+WHERE r.averageRating > 7.5
+AND b.titleType = 'movie';
+"""
+filmes = pd.read_sql_query(query, conn)
+print(filmes)
+```
+
+```{python}
+#| scrolled: true
+query = """
+SELECT nconst , COUNT(tconst) AS Total
+FROM principals
+WHERE tconst IN (SELECT r.tconst
+                 FROM ratings r
+                 JOIN basics b ON r.tconst = b.tconst
+                 WHERE r.averageRating > 7.5
+                 AND b.titleType = 'movie')
+GROUP BY nconst
+ORDER BY Total DESC 
+LIMIT 3
+"""
+
+atores = pd.read_sql_query(query, conn)
+print(atores)
+```
+
+Como não foi fornecido o nome dos atores, foi selecionado os ID's dos 3 autores.
+- **nm0004660** (233 participações)
+- **nm5954636** (200 participações)
+- **nm0595934** (170 participações)
+
+```{python}
+conn.close()
+```
+
