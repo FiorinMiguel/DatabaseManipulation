@@ -7515,17 +7515,26 @@ a.anchor-link {
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [15]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [18]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-julia"><pre><span></span><span class="k">using</span><span class="w"> </span><span class="n">Distributed</span>
 <span class="k">using</span><span class="w"> </span><span class="n">BenchmarkTools</span>
+<span class="k">using</span><span class="w"> </span><span class="n">Dates</span>
 
-<span class="c"># Adiciona 4 processos paralelos</span>
+<span class="n">formata</span><span class="p">(</span><span class="n">dt</span><span class="p">)</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">Dates</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">dt</span><span class="p">,</span><span class="w"> </span><span class="s">"dd/MM/yyyy HH:mm:ss"</span><span class="p">)</span>
+
+<span class="n">println</span><span class="p">(</span><span class="s">"======================================="</span><span class="p">)</span>
+<span class="n">println</span><span class="p">(</span><span class="s">"      TESTE DE PARALELIZAÇÃO          "</span><span class="p">)</span>
+<span class="n">println</span><span class="p">(</span><span class="s">"======================================="</span><span class="p">)</span>
+
+<span class="n">agora</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">now</span><span class="p">()</span>
+<span class="n">println</span><span class="p">(</span><span class="s">"Execução iniciada em: "</span><span class="p">,</span><span class="w"> </span><span class="n">formata</span><span class="p">(</span><span class="n">agora</span><span class="p">))</span>
+<span class="n">println</span><span class="p">(</span><span class="s">"---------------------------------------"</span><span class="p">)</span>
+
 <span class="n">addprocs</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 
 <span class="nd">@everywhere</span><span class="w"> </span><span class="k">begin</span>
-<span class="w">    </span><span class="c"># Função pesada que gastar CPU</span>
 <span class="w">    </span><span class="k">function</span><span class="w"> </span><span class="n">trabalho_pesado</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 <span class="w">        </span><span class="n">s</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span>
 <span class="w">        </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">1</span><span class="o">:</span><span class="mi">10_000_000</span>
@@ -7535,14 +7544,8 @@ a.anchor-link {
 <span class="w">    </span><span class="k">end</span>
 <span class="k">end</span>
 
-<span class="n">println</span><span class="p">(</span><span class="s">"======================================="</span><span class="p">)</span>
-<span class="n">println</span><span class="p">(</span><span class="s">"  TESTE: PARALELIZAÇÃO COM PROCESSES  "</span><span class="p">)</span>
-<span class="n">println</span><span class="p">(</span><span class="s">"======================================="</span><span class="p">)</span>
 <span class="n">println</span><span class="p">(</span><span class="s">"Processos disponíveis: "</span><span class="p">,</span><span class="w"> </span><span class="n">nprocs</span><span class="p">())</span>
 
-<span class="c"># ------------------------------</span>
-<span class="c"># 1. Execução em SÉRIE</span>
-<span class="c"># ------------------------------</span>
 <span class="k">function</span><span class="w"> </span><span class="n">serie</span><span class="p">()</span>
 <span class="w">    </span><span class="n">results</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">zeros</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
 <span class="w">    </span><span class="k">for</span><span class="w"> </span><span class="n">i</span><span class="w"> </span><span class="k">in</span><span class="w"> </span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span>
@@ -7551,9 +7554,6 @@ a.anchor-link {
 <span class="w">    </span><span class="k">return</span><span class="w"> </span><span class="n">results</span>
 <span class="k">end</span>
 
-<span class="c"># ------------------------------</span>
-<span class="c"># 2. Execução em PARALELO</span>
-<span class="c"># ------------------------------</span>
 <span class="k">function</span><span class="w"> </span><span class="n">paralelo</span><span class="p">()</span>
 <span class="w">    </span><span class="n">pmap</span><span class="p">(</span><span class="n">trabalho_pesado</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="o">:</span><span class="mi">4</span><span class="p">)</span>
 <span class="k">end</span>
@@ -7567,7 +7567,9 @@ a.anchor-link {
 <span class="n">println</span><span class="p">(</span><span class="s">"Tempo em paralelo: </span><span class="si">$</span><span class="p">(</span><span class="n">round</span><span class="p">(</span><span class="n">tempo_paralelo</span><span class="p">,</span><span class="w"> </span><span class="n">digits</span><span class="o">=</span><span class="mi">4</span><span class="p">))</span><span class="s"> s"</span><span class="p">)</span>
 
 <span class="n">println</span><span class="p">(</span><span class="s">"</span><span class="se">\n</span><span class="s">&gt;&gt; Speedup obtido:"</span><span class="p">)</span>
-<span class="n">println</span><span class="p">(</span><span class="s">"Speedup = </span><span class="si">$</span><span class="p">(</span><span class="n">round</span><span class="p">(</span><span class="n">tempo_serie</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">tempo_paralelo</span><span class="p">,</span><span class="w"> </span><span class="n">digits</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span><span class="s">x mais rápido"</span><span class="p">)</span>
+<span class="n">println</span><span class="p">(</span><span class="s">"Speedup = </span><span class="si">$</span><span class="p">(</span><span class="n">round</span><span class="p">(</span><span class="n">tempo_serie</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">tempo_paralelo</span><span class="p">,</span><span class="w"> </span><span class="n">digits</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span><span class="s">x"</span><span class="p">)</span>
+<span class="n">println</span><span class="p">(</span><span class="s">"======================================="</span><span class="p">)</span>
+<span class="n">println</span><span class="p">(</span><span class="s">"Execução finalizada em: "</span><span class="p">,</span><span class="w"> </span><span class="n">formata</span><span class="p">(</span><span class="n">now</span><span class="p">()))</span>
 <span class="n">println</span><span class="p">(</span><span class="s">"======================================="</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -7582,18 +7584,22 @@ a.anchor-link {
 <div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
 <div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
 <pre>=======================================
-  TESTE: PARALELIZAÇÃO COM PROCESSES  
+      TESTE DE PARALELIZAÇÃO          
 =======================================
-Processos disponíveis: 9
+Execução iniciada em: 20/15/2025 08:11:295
+---------------------------------------
+Processos disponíveis: 21
 
 &gt;&gt; Medindo tempo em SÉRIE...
-Tempo em série:   1.0303 s
+Tempo em série:   1.0319 s
 
 &gt;&gt; Medindo tempo em PARALELO...
-Tempo em paralelo: 0.3556 s
+Tempo em paralelo: 0.3767 s
 
 &gt;&gt; Speedup obtido:
-Speedup = 2.9x mais rápido
+Speedup = 2.74x
+=======================================
+Execução finalizada em: 20/16/2025 08:11:144
 =======================================
 </pre>
 </div>
